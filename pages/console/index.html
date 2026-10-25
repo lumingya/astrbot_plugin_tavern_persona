@@ -82,6 +82,15 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
 .wb-pager{display:flex;gap:5px;align-items:center}
 .wb-pager-info{font-size:12px;margin:0 4px}
 .wb-list{display:flex;flex-direction:column;gap:8px}
+
+/* 页面内置确认对话框（突破 iframe 缺乏 allow-modals 的沙箱限制） */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:99;display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn .12s ease-out}
+.modal-box{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);max-width:440px;width:100%;padding:20px;display:flex;flex-direction:column;gap:14px;animation:popIn .12s ease-out}
+.modal-title{font-size:15px;font-weight:700;color:inherit}
+.modal-body{font-size:13px;line-height:1.6;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+.modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:6px}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
 /* 概览、开场白与世界书通用编辑表单样式（参考 astrbot_plugin_st_prompt） */
 .edit-box{border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--surface) 80%,transparent);padding:14px;margin-bottom:12px}
 .edit-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
@@ -227,6 +236,42 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
     return [];
   }
 
+  function modalConfirm(message, onConfirm, isDanger){
+    var overlay = document.createElement("div"); overlay.className = "modal-overlay";
+    var box = document.createElement("div"); box.className = "modal-box";
+    var title = document.createElement("div"); title.className = "modal-title"; title.textContent = "操作确认";
+    var body = document.createElement("div"); body.className = "modal-body"; body.textContent = message;
+    var actions = document.createElement("div"); actions.className = "modal-actions";
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn small";
+    cancelBtn.textContent = "取消";
+
+    var confirmBtn = document.createElement("button");
+    confirmBtn.className = "btn small" + (isDanger ? " danger" : " primary");
+    confirmBtn.textContent = "确定";
+
+    function close(){
+      document.removeEventListener("keydown", onKeyDown);
+      overlay.remove();
+    }
+
+    function onKeyDown(e){
+      if(e.key === "Escape"){ e.preventDefault(); close(); }
+      else if(e.key === "Enter"){ e.preventDefault(); close(); onConfirm(); }
+    }
+
+    cancelBtn.addEventListener("click", function(){ close(); });
+    confirmBtn.addEventListener("click", function(){ close(); onConfirm(); });
+    overlay.addEventListener("click", function(e){ if(e.target === overlay) close(); });
+
+    actions.append(cancelBtn, confirmBtn);
+    box.append(title, body, actions);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    document.addEventListener("keydown", onKeyDown);
+    confirmBtn.focus();
+  }
   function notify(message, error){
     var toast = document.createElement("div"); toast.className = "toast" + (error ? " error" : ""); toast.textContent = message;
     $("toastHost").appendChild(toast); setTimeout(function(){ toast.remove(); }, 3600);
@@ -327,10 +372,11 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
   }
 
   function removeCard(card){
-    if(!window.confirm("确定删除角色卡「" + (card.name || card.id) + "」？已关联会话的该角色激活也会解除。")) return;
-    post("delete", { id: card.id }).then(function(result){
-      notify(result.message || "已删除"); if(state.selectedId === card.id) closeDetail(); return loadState();
-    }).catch(function(error){ notify(error.message, true); });
+    modalConfirm("确定删除角色卡「" + (card.name || card.id) + "」？\n已关联会话的该角色激活也会解除。", function(){
+      post("delete", { id: card.id }).then(function(result){
+        notify(result.message || "已删除"); if(state.selectedId === card.id) closeDetail(); return loadState();
+      }).catch(function(error){ notify(error.message, true); });
+    }, true);
   }
 
   function openDetail(id){
@@ -404,13 +450,14 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
       });
       var resetBtn = document.createElement("button"); resetBtn.id = "resetPersonaIdBtn"; resetBtn.className = "btn small"; resetBtn.textContent = "恢复默认"; resetBtn.title = "恢复为默认格式 ST/{名称} [{卡片ID}]";
       resetBtn.addEventListener("click", function(){
-        if(!window.confirm("确定将 Persona ID 恢复为默认格式？")) return;
-        setBusy(resetBtn, true);
-        post("card/persona_id", { id: data.id, reset: true }).then(function(res){
-          notify(res.message || "已恢复为默认 Persona ID");
-          if(res.data && res.data.persona_id){ data.persona_id = res.data.persona_id; pInput.value = data.persona_id; }
-          return loadState();
-        }).catch(function(err){ notify(err.message, true); }).finally(function(){ setBusy(resetBtn, false); });
+        modalConfirm("确定将 Persona ID 恢复为默认格式？", function(){
+          setBusy(resetBtn, true);
+          post("card/persona_id", { id: data.id, reset: true }).then(function(res){
+            notify(res.message || "已恢复为默认 Persona ID");
+            if(res.data && res.data.persona_id){ data.persona_id = res.data.persona_id; pInput.value = data.persona_id; }
+            return loadState();
+          }).catch(function(err){ notify(err.message, true); }).finally(function(){ setBusy(resetBtn, false); });
+        });
       });
       pRow.append(pInput, saveBtn, resetBtn); pSection.append(pHead, pRow); body.appendChild(pSection);
 
@@ -553,19 +600,24 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
             });
             btnGroup.appendChild(btnEdit);
             if(index > 0){
-              var btnDel = createButton("🗑️ 删除", "small danger", function(){
-                if(!window.confirm("确定删除备用开场白 #" + (index + 1) + "？")) return;
-                var nextGreetings = greetings.slice(0, index).concat(greetings.slice(index + 1));
-                post("card/greetings/edit", { id: data.id, greetings: nextGreetings.map(function(item){ return item.text; }) }).then(function(res){
-                  notify("已删除备用开场白");
-                  data.greetings = res.data && res.data.greetings ? res.data.greetings : nextGreetings;
-                  if(state.editingGreetingIndex === index) state.editingGreetingIndex = -1;
-                  var cItem = state.cards.find(function(c){ return c.id === data.id; });
-                  if(cItem){ cItem.greeting_count = data.greetings.length; renderCards(); }
-                  renderDetail();
-                }).catch(function(err){ notify("删除失败：" + err.message, true); });
+                            var btnDel = createButton("🗑️ 删除", "small danger", function(){
+                modalConfirm("确定删除备用开场白 #" + (index + 1) + "？", function(){
+                  var nextGreetings = greetings.slice(0, index).concat(greetings.slice(index + 1));
+                  post("card/greetings/edit", { id: data.id, greetings: nextGreetings.map(function(item){ return item.text; }) }).then(function(res){
+                    notify("已删除备用开场白");
+                    data.greetings = res.data && res.data.greetings ? res.data.greetings : nextGreetings;
+                    if(state.editingGreetingIndex === index){
+                      state.editingGreetingIndex = -1;
+                    } else if(state.editingGreetingIndex > index){
+                      state.editingGreetingIndex--;
+                    }
+                    var cItem = state.cards.find(function(c){ return c.id === data.id; });
+                    if(cItem){ cItem.greeting_count = data.greetings.length; renderCards(); }
+                    renderDetail();
+                  }).catch(function(err){ notify("删除失败：" + err.message, true); });
+                }, true);
               });
-              btnGroup.appendChild(btnDel);
+            btnGroup.appendChild(btnDel);
             }
             eHead.appendChild(btnGroup);
             entry.appendChild(eHead);
@@ -990,8 +1042,18 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
         }
       }
       if(!matchedToEnable.length) return;
-      if(!window.confirm("确定将当前筛选匹配的 " + matchedToEnable.length + " 个已禁用条目全部启用？（此操作跨页生效）")) return;
-      setBusy(batchEnableBtn, true); setBusy(batchDisableBtn, true);
+      modalConfirm("确定将当前筛选匹配的 " + matchedToEnable.length + " 个已禁用条目全部启用？\n（此操作跨页生效）", function(){
+        setBusy(batchEnableBtn, true); setBusy(batchDisableBtn, true);
+        post("card/worldbook/enabled", { id: data.id, indices: matchedToEnable, enabled: true }).then(function(res){
+          notify(res.message || "已批量启用 " + matchedToEnable.length + " 个条目");
+          matchedToEnable.forEach(function(idx){
+            if(entries[idx]) entries[idx].enabled = true;
+          });
+          updateDynamicView();
+        }).catch(function(err){ notify("批量保存失败：" + err.message, true); })
+          .finally(function(){ setBusy(batchEnableBtn, false); setBusy(batchDisableBtn, false); });
+      });
+      return;
       post("card/worldbook/enabled", { id: data.id, indices: matchedToEnable, enabled: true }).then(function(res){
         notify(res.message || "已批量启用 " + matchedToEnable.length + " 个条目");
         matchedToEnable.forEach(function(idx){
@@ -1023,8 +1085,18 @@ input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-m
         }
       }
       if(!matchedToDisable.length) return;
-      if(!window.confirm("确定将当前筛选匹配的 " + matchedToDisable.length + " 个已启用条目全部禁用？（此操作跨页生效）")) return;
-      setBusy(batchEnableBtn, true); setBusy(batchDisableBtn, true);
+      modalConfirm("确定将当前筛选匹配的 " + matchedToDisable.length + " 个已启用条目全部禁用？\n（此操作跨页生效）", function(){
+        setBusy(batchEnableBtn, true); setBusy(batchDisableBtn, true);
+        post("card/worldbook/enabled", { id: data.id, indices: matchedToDisable, enabled: false }).then(function(res){
+          notify(res.message || "已批量禁用 " + matchedToDisable.length + " 个条目");
+          matchedToDisable.forEach(function(idx){
+            if(entries[idx]) entries[idx].enabled = false;
+          });
+          updateDynamicView();
+        }).catch(function(err){ notify("批量保存失败：" + err.message, true); })
+          .finally(function(){ setBusy(batchEnableBtn, false); setBusy(batchDisableBtn, false); });
+      }, true);
+      return;
       post("card/worldbook/enabled", { id: data.id, indices: matchedToDisable, enabled: false }).then(function(res){
         notify(res.message || "已批量禁用 " + matchedToDisable.length + " 个条目");
         matchedToDisable.forEach(function(idx){
