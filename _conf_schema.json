@@ -1,0 +1,40 @@
+{
+  "source_dir": {
+    "description": "可选：/card import 使用相对路径时的基目录；留空则要求绝对路径或使用管理页面上传",
+    "type": "string",
+    "default": ""
+  },
+  "worldbook_mode": {
+    "description": "默认世界书处理方式：triggered 关键词触发，all 注入所有启用条目，off 关闭；可通过命令按会话覆盖",
+    "type": "string",
+    "default": "triggered"
+  },
+  "max_worldbook_entries": {
+    "description": "每轮最多注入的世界书条目数",
+    "type": "int",
+    "default": 80,
+    "slider": {"min": 0, "max": 1000, "step": 10}
+  },
+  "max_worldbook_chars": {
+    "description": "每轮世界书提示词最大字符数",
+    "type": "int",
+    "default": 32000,
+    "slider": {"min": 0, "max": 100000, "step": 1000}
+  },
+  "max_persona_chars": {
+    "description": "角色核心人设最大字符数",
+    "type": "int",
+    "default": 120000,
+    "slider": {"min": 1000, "max": 200000, "step": 1000}
+  },
+  "include_examples": {
+    "description": "将 mes_example 对话示例并入系统人设",
+    "type": "bool",
+    "default": true
+  },
+  "include_creator_notes": {
+    "description": "将 creator_notes 作者备注并入系统人设",
+    "type": "bool",
+    "default": false
+  }
+}

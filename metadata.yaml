@@ -1,0 +1,10 @@
+name: astrbot_plugin_tavern_persona
+display_name: 角色卡转换器
+short_desc: 导入酒馆兼容格式角色卡并同步原生 Persona、世界书与 Regex Scripts
+desc: |
+  导入兼容 SillyTavern V2/V3 格式的 PNG 或 JSON 角色卡。SillyTavern 是格式兼容来源，不是运行依赖；插件不安装、启动或扫描其目录。
+  可通过管理页面上传本地文件，或使用命令导入 AstrBot 主机可访问的路径；同步 AstrBot 原生 Persona，在会话内注入人设、世界书并处理卡片 Regex Scripts。
+  插件卡片内提供独立管理页面，支持分块上传、卡片详情、session 级 Persona 管理、世界书模式和脚本/正则审阅。
+author: lumingya
+version: 0.1.0
+repo: https://github.com/lumingya/astrbot_plugin_tavern_persona

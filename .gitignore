@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.tmp
+*.part
+*.delete-backup
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.DS_Store
+Thumbs.db
+
+# 排除用户运行期动态上传的私有数据与导出，仅保留目录结构
+data/cards/*
+!data/cards/.gitkeep
+data/web_uploads/*
+!data/web_uploads/.gitkeep
+data/exports/*
+!data/exports/.gitkeep

@@ -1,0 +1,1298 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>角色卡管理 · AstrBot</title>
+<script src="/api/plugin/page/bridge-sdk.js"></script>
+<style>
+:root{font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;color:#202536;background:#f4f6fb;font-synthesis:none;text-rendering:optimizeLegibility;--surface:#fff;--muted:#697386;--line:#e3e8f1;--accent:#6758d6;--accent-soft:#efedff;--good:#18825b;--bad:#bb3c4b;--shadow:0 12px 32px rgba(36,48,78,.08)}
+:root[data-theme="dark"]{color:#e9ecf4;background:#111521;--surface:#1b2130;--muted:#a3adc1;--line:#30394c;--accent:#a69aff;--accent-soft:#302d50;--good:#66d1a2;--bad:#ff8993;--shadow:0 14px 34px rgba(0,0,0,.25)}
+*{box-sizing:border-box}
+body{margin:0;min-width:320px;background:transparent;color:inherit}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.shell{max-width:1180px;margin:0 auto;padding:26px 22px 44px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,#8578f4,#4b45bc);color:white;font-size:25px;box-shadow:var(--shadow)}
+h1{font-size:23px;line-height:1.2;margin:0}
+.subtitle{color:var(--muted);font-size:13px;margin-top:5px}
+.actions{display:flex;gap:9px;align-items:center}
+.card,.panel{background:var(--surface);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}
+.panel{padding:19px;margin-bottom:16px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:13px}
+.panel-head h2{font-size:16px;margin:0}
+.hint{font-size:12px;color:var(--muted);line-height:1.55}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:6px;min-width:220px;flex:1}
+.field label{font-size:12px;font-weight:650;color:var(--muted)}
+input,select{border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:10px;padding:10px 12px;min-height:40px;outline:none}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.btn{border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:10px;padding:9px 13px;font-size:13px;font-weight:650;transition:.15s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
+.btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:white}
+.btn.danger{color:var(--bad)}
+.btn.small{padding:7px 10px;font-size:12px}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.badge.active{background:color-mix(in srgb,var(--good) 13%,var(--surface));color:var(--good)}
+.drop{border:1.5px dashed color-mix(in srgb,var(--accent) 45%,var(--line));background:color-mix(in srgb,var(--accent-soft) 48%,var(--surface));border-radius:14px;padding:19px;text-align:center;cursor:pointer;transition:.15s}
+.drop.drag{border-color:var(--accent);background:var(--accent-soft)}
+.drop strong{font-size:14px}
+.drop .hint{margin-top:5px}
+.drop-icon{font-size:22px;margin-bottom:5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:13px}
+.char-card{border:1px solid var(--line);background:var(--surface);border-radius:15px;padding:15px;min-width:0;transition:.16s}
+.char-card:hover{border-color:color-mix(in srgb,var(--accent) 55%,var(--line));box-shadow:var(--shadow);transform:translateY(-2px)}
+.char-title{font-size:15px;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.char-desc{font-size:12px;line-height:1.5;color:var(--muted);height:37px;overflow:hidden;margin:8px 0 10px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.meta .badge{max-width:100%;min-width:0;overflow-wrap:anywhere}
+.card-actions{display:flex;gap:7px;flex-wrap:wrap}
+.empty{padding:30px 14px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:13px}
+.detail{display:none;margin-top:16px}
+.detail.show{display:block}
+.tabs{display:flex;gap:7px;border-bottom:1px solid var(--line);margin-bottom:14px;overflow:auto}
+.tab{border:0;background:transparent;color:var(--muted);padding:9px 12px;border-bottom:2px solid transparent;font-weight:650;white-space:nowrap}
+.tab.on{color:var(--accent);border-color:var(--accent)}
+.tab:focus-visible{outline:none;border-color:var(--accent)}
+.detail-body{font-size:13px;line-height:1.6}
+.detail-body pre{white-space:pre-wrap;margin:0;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+.entry{border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin:8px 0;background:var(--surface)}
+.entry-title{font-weight:700;margin-bottom:4px}
+.entry-content{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted)}
+.toast{position:fixed;right:22px;bottom:22px;z-index:20;max-width:min(440px,calc(100vw - 36px));padding:12px 15px;border-radius:12px;background:#252b3d;color:#fff;box-shadow:var(--shadow);font-size:13px}
+.toast.error{background:#982d3d}
+.notice{color:var(--muted);font-size:12px;margin-top:9px}
+.footer{text-align:center;font-size:11px;color:var(--muted);padding-top:10px}
+.hidden{display:none!important}
+
+/* 世界书工具栏、分页与条目大列表组件样式 */
+.wb-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;padding:12px;background:color-mix(in srgb,var(--surface) 60%,transparent);border:1px solid var(--line);border-radius:12px}
+.wb-search-wrap{flex:1 1 200px;min-width:180px}
+.wb-search-wrap input{width:100%;min-height:36px;padding:6px 12px;font-size:13px}
+.wb-filter-wrap{flex:0 0 140px}
+.wb-filter-wrap select{width:100%;min-height:36px;padding:6px 10px;font-size:12.5px}
+.wb-batch-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wb-status-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:0 4px;font-size:12px;color:var(--muted)}
+.wb-stats strong{color:inherit;font-weight:700}
+.wb-pager{display:flex;gap:5px;align-items:center}
+.wb-pager-info{font-size:12px;margin:0 4px}
+.wb-list{display:flex;flex-direction:column;gap:8px}
+/* 概览、开场白与世界书通用编辑表单样式（参考 astrbot_plugin_st_prompt） */
+.edit-box{border:1px solid var(--line);border-radius:12px;background:color-mix(in srgb,var(--surface) 80%,transparent);padding:14px;margin-bottom:12px}
+.edit-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.edit-title{font-size:14px;font-weight:700}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field.full{grid-column:1 / -1}
+.form-field label{font-size:11.5px;font-weight:700;color:var(--muted)}
+.form-field input,.form-field textarea{border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:8px;padding:8px 10px;font-size:12.5px;outline:none;transition:border-color .15s,box-shadow .15s}
+.form-field input:focus,.form-field textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.form-field textarea{font-family:ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",monospace;line-height:1.6;resize:vertical;min-height:76px}
+.form-check{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;margin-top:4px}
+.form-check input{cursor:pointer}
+.edit-bar{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.edit-hint{font-size:11px;color:var(--muted);margin-left:auto}
+@media(max-width:680px){.form-grid{grid-template-columns:1fr}}
+
+
+.wb-entry{border:1px solid var(--line);border-radius:12px;background:var(--surface);transition:border-color .15s,opacity .15s,background-color .15s}
+.wb-entry:hover{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.wb-entry.disabled{opacity:0.62;background:color-mix(in srgb,var(--muted) 5%,var(--surface))}
+.wb-entry.disabled:hover{opacity:0.92}
+.wb-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 13px;min-height:48px}
+.wb-summary-left{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.wb-toggle-btn{border:none;background:transparent;color:var(--muted);font-size:12px;width:24px;height:24px;display:grid;place-items:center;border-radius:6px;padding:0;flex-shrink:0;transition:transform .15s,color .15s,background .15s}
+.wb-toggle-btn:hover{color:var(--accent);background:var(--accent-soft)}
+.wb-toggle-btn:focus-visible{outline:none;color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
+.wb-toggle-btn[aria-expanded="true"]{transform:rotate(90deg);color:var(--accent)}
+.wb-index{font-size:12px;font-weight:700;color:var(--muted);flex-shrink:0;min-width:28px}
+.wb-name{font-size:13.5px;font-weight:700;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;cursor:pointer}
+.wb-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.wb-chip{display:inline-flex;align-items:center;font-size:11px;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.wb-chip.constant{background:color-mix(in srgb,var(--good) 14%,var(--surface));color:var(--good);font-weight:700}
+.wb-chip.more{background:color-mix(in srgb,var(--muted) 14%,var(--surface));color:var(--muted);font-weight:600}
+.wb-chip.disabled-tag{background:color-mix(in srgb,var(--bad) 13%,var(--surface));color:var(--bad);font-weight:600}
+
+/* 原生 Switch 开关，带独立 label 与焦点环 */
+.wb-switch-wrap{display:inline-flex;align-items:center;gap:8px;flex-shrink:0}
+.wb-switch-text{font-size:12px;color:var(--muted);font-weight:600}
+.wb-switch{position:relative;display:inline-block;width:38px;height:22px;vertical-align:middle}
+.wb-switch input{opacity:0;width:0;height:0;position:absolute;margin:0}
+.wb-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:color-mix(in srgb,var(--muted) 38%,transparent);border:1px solid var(--line);transition:.18s;border-radius:22px}
+.wb-slider:before{position:absolute;content:"";height:16px;width:16px;left:2px;bottom:2px;background-color:white;transition:.18s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.wb-switch input:checked + .wb-slider{background-color:var(--accent);border-color:var(--accent)}
+.wb-switch input:checked + .wb-slider:before{transform:translateX(16px)}
+.wb-switch input:focus-visible + .wb-slider{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.wb-switch input:disabled + .wb-slider{opacity:.45;cursor:not-allowed}
+
+.wb-content{border-top:1px solid var(--line);padding:12px 14px;background:color-mix(in srgb,var(--accent-soft) 18%,var(--surface));border-bottom-left-radius:12px;border-bottom-right-radius:12px}
+.wb-content-meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-bottom:10px;font-size:12px;color:var(--muted)}
+.wb-content-meta-item strong{color:inherit;font-weight:650}
+.wb-content-body{font-family:ui-monospace,SFMono-Regular,Consolas,"Microsoft YaHei",monospace;font-size:12.5px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:8px;max-height:360px;overflow-y:auto}
+
+@media(max-width:640px){
+  .shell{padding:18px 13px 30px}
+  .topbar{align-items:flex-start}
+  .logo{width:40px;height:40px;border-radius:13px}
+  h1{font-size:19px}
+  .actions{gap:6px}
+  .panel{padding:15px}
+  .field{min-width:100%}
+  .grid{grid-template-columns:1fr}
+  .topbar .subtitle{max-width:210px}
+  .wb-toolbar{flex-direction:column;align-items:stretch}
+  .wb-filter-wrap{flex:1 1 auto}
+  .wb-batch-group{width:100%;justify-content:space-between}
+  .wb-batch-group .btn{flex:1}
+  .wb-summary{flex-direction:column;align-items:flex-start;gap:8px}
+  .wb-summary-left{width:100%}
+  .wb-switch-wrap{align-self:flex-end}
+  .wb-name{max-width:180px}
+  .wb-status-bar{flex-direction:column;align-items:flex-start;gap:8px}
+}
+</style>
+</head>
+<body>
+<div class="shell" id="app">
+  <header class="topbar">
+    <div class="brand"><div class="logo">✦</div><div><h1>角色卡管理</h1><div class="subtitle">导入兼容 SillyTavern V2/V3 格式的卡片，并按会话管理角色人设和世界书</div></div></div>
+    <div class="actions"><button class="btn" id="themeBtn" title="切换主题">◐</button><button class="btn" id="refreshBtn">刷新</button></div>
+  </header>
+
+  <section class="panel">
+    <div class="panel-head"><h2>会话设置</h2><span id="activeBadge" class="badge">未连接会话</span></div>
+    <div class="row">
+      <div class="field"><label for="sessionId">目标会话 ID</label><input id="sessionId" placeholder="粘贴 /card status (或 /stcard status) 的会话 ID"></div>
+      <div class="field" style="max-width:220px;flex:0 0 220px"><label for="worldbookMode">世界书模式</label><select id="worldbookMode"><option value="triggered">关键词触发</option><option value="all">注入所有启用条目</option><option value="off">关闭世界书</option></select></div>
+      <button class="btn" id="saveModeBtn" style="align-self:end">保存模式</button><button class="btn danger" id="turnOffBtn" style="align-self:end">关闭当前会话</button>
+    </div>
+    <div class="notice">管理页面与聊天指令共享状态；从聊天中运行 <code>/card status</code> (或 <code>/stcard status</code>) 后复制会话 ID。人设激活会自动同步到 AstrBot 原生 Persona，并覆盖当前会话全部对话。</div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>导入角色卡</h2><span class="hint">兼容 SillyTavern V2/V3 格式的 PNG 或 JSON，最大 128 MB</span></div>
+    <div class="drop" id="dropZone" tabindex="0" role="button" aria-label="选择或拖入角色卡文件"><div class="drop-icon">⇧</div><strong>拖放角色卡到这里，或点击选择文件</strong><div class="hint">文件分块上传；角色卡将自动同步至原生 Persona，并由插件直接执行 Regex 正则脚本</div></div>
+    <input id="fileInput" class="hidden" type="file" accept=".png,.json,image/png,application/json">
+    <div id="uploadStatus" class="notice"></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2>已导入角色卡</h2><span id="countBadge" class="badge">0 张</span></div>
+    <div id="cards" class="grid"><div class="empty">加载中…</div></div>
+    <div id="detail" class="detail">
+      <div class="panel-head" style="margin-top:17px"><h2 id="detailTitle">角色卡详情</h2><button class="btn small" id="closeDetail">收起详情</button></div>
+      <div class="tabs"><button class="tab on" data-tab="overview">概览</button><button class="tab" data-tab="greetings">开场白</button><button class="tab" data-tab="worldbook">世界书</button><button class="tab" data-tab="scripts">脚本 / 正则审阅</button></div>
+      <div class="detail-body" id="detailBody"></div>
+    </div>
+  </section>
+  <div class="footer">astrbot_plugin_tavern_persona · 管理页面与 /card 原生 Persona / 聊天指令共享状态</div>
+</div>
+<div id="toastHost"></div>
+<script>
+(function(){
+  "use strict";
+  var bridge = window.AstrBotPluginPage;
+  var app = document.getElementById("app");
+  if(!bridge || typeof bridge.apiGet !== "function" || typeof bridge.apiPost !== "function"){
+    app.innerHTML = '<div class="panel">请从 AstrBot 管理面板的插件卡片 → 页面打开本页，直接打开文件无法通过认证访问插件 API。</div>';
+    return;
+  }
+  var state = {
+    cards: [],
+    selectedId: "",
+    detail: null,
+    tab: "overview",
+    expandedIndices: new Set(),
+    wbPage: 1,
+    wbPageSize: 50,
+    wbSearch: "",
+    wbFilter: "all",
+    isEditingOverview: false,
+    editingGreetingIndex: -1,
+    editingWbIndex: -1
+  };
+  var pendingUploadCleanup = [];
+  var $ = function(id){ return document.getElementById(id); };
+  var text = function(value){ return String(value == null ? "" : value); };
+  function extractKeys(entry, isSecondary){
+    if(!entry || typeof entry !== "object") return [];
+    var val = isSecondary ? (entry.secondary_keys != null ? entry.secondary_keys : entry.keysecondary) : (entry.keys != null ? entry.keys : entry.key);
+    if(Array.isArray(val)) return val.map(text).map(function(s){ return s.trim(); }).filter(Boolean);
+    if(typeof val === "string") return val.split(",").map(function(s){ return s.trim(); }).filter(Boolean);
+    return [];
+  }
+
+  function notify(message, error){
+    var toast = document.createElement("div"); toast.className = "toast" + (error ? " error" : ""); toast.textContent = message;
+    $("toastHost").appendChild(toast); setTimeout(function(){ toast.remove(); }, 3600);
+  }
+  function unwrap(response){
+    if(response && response.status && response.status !== "ok") throw new Error(response.message || "请求失败");
+    return response && response.status === "ok" && response.data !== undefined ? response.data : response;
+  }
+  function get(path, params){ return bridge.apiGet(path, params || {}).then(unwrap); }
+  function post(path, body){ return bridge.apiPost(path, body || {}).then(unwrap); }
+  function sessionId(){ return $("sessionId").value.trim(); }
+  function setBusy(element, busy){ element.disabled = !!busy; }
+  function formatSpec(card){ return card.spec_version ? "V" + card.spec_version : (card.spec || "角色卡"); }
+  function createButton(label, cls, action){
+    var button = document.createElement("button");
+    button.className = "btn small" + (cls ? " " + cls : "");
+    button.textContent = label;
+    button.addEventListener("click", action);
+    return button;
+  }
+
+  function renderCards(){
+    var host = $("cards"); host.replaceChildren(); $("countBadge").textContent = state.cards.length + " 张";
+    if(!state.cards.length){
+      var empty = document.createElement("div"); empty.className = "empty"; empty.textContent = "还没有角色卡。选择或拖入一张 PNG/JSON 角色卡开始。";
+      host.appendChild(empty); return;
+    }
+    state.cards.forEach(function(card){
+      var box = document.createElement("article"); box.className = "char-card";
+      var top = document.createElement("div"); top.className = "row"; top.style.justifyContent = "space-between";
+      var name = document.createElement("div"); name.className = "char-title"; name.textContent = card.name || card.id; name.title = card.name || card.id; top.appendChild(name);
+      var badge = document.createElement("span"); badge.className = "badge" + (card.active ? " active" : ""); badge.textContent = card.active ? "当前会话已启用" : formatSpec(card); top.appendChild(badge); box.appendChild(top);
+      var desc = document.createElement("div"); desc.className = "char-desc"; desc.textContent = card.description || "（没有简介）"; box.appendChild(desc);
+      var meta = document.createElement("div"); meta.className = "meta";
+      var metaItems = [
+        [formatSpec(card), ""],
+        ["世界书 " + (card.worldbook_count || 0), ""],
+        ["开场白 " + (card.greeting_count || 0), ""]
+      ];
+      if(card.regex_count){ metaItems.push(["⚡ 正则 " + card.regex_count + " 组", ""]); }
+      if(card.persona_id){ metaItems.push(["👤 " + card.persona_id, ""]); }
+      metaItems.forEach(function(item){
+        var b = document.createElement("span"); b.className = "badge"; b.textContent = item[0]; meta.appendChild(b);
+      });
+      box.appendChild(meta);
+      var actions = document.createElement("div"); actions.className = "card-actions";
+      actions.appendChild(createButton("查看详情", "", function(){ openDetail(card.id); }));
+      actions.appendChild(createButton("用于当前会话", "primary", function(){ activate(card.id); }));
+      actions.appendChild(createButton("删除", "danger", function(){ removeCard(card); }));
+      box.appendChild(actions); host.appendChild(box);
+    });
+  }
+
+  function renderActive(){
+    var badge = $("activeBadge"), id = sessionId();
+    if(!id){
+      badge.className = "badge"; badge.textContent = "未连接会话"; $("worldbookMode").disabled = true; $("saveModeBtn").disabled = true; $("turnOffBtn").disabled = true; return;
+    }
+    var selected = state.cards.find(function(c){ return c.id === state.active_card_id; });
+    badge.className = "badge" + (selected ? " active" : ""); badge.textContent = selected ? "已启用：" + selected.name : "会话已选择，未启用角色卡";
+    $("worldbookMode").disabled = false; $("saveModeBtn").disabled = false; $("turnOffBtn").disabled = false;
+    $("worldbookMode").value = state.worldbook_mode || "triggered";
+  }
+
+  function loadState(){
+    var params = {}; if(sessionId()) params.session_id = sessionId();
+    return get("state", params).then(function(data){
+      state.cards = data.cards || [];
+      state.active_card_id = data.active_card_id || "";
+      state.worldbook_mode = data.worldbook_mode || "triggered";
+      renderCards();
+      renderActive();
+    }).catch(function(error){
+      notify(error.message, true);
+      $("cards").textContent = "无法读取角色卡：" + error.message;
+    });
+  }
+
+  function activate(id){
+    if(!sessionId()){ notify("请先填写目标会话 ID。", true); $("sessionId").focus(); return; }
+    post("session/select", { session_id: sessionId(), card_id: id }).then(function(result){
+      notify(result.message || "角色卡已启用"); return loadState();
+    }).catch(function(error){ notify(error.message, true); });
+  }
+
+  function turnOff(){
+    if(!sessionId()){ notify("请先填写目标会话 ID。", true); return; }
+    post("session/off", { session_id: sessionId() }).then(function(result){
+      notify(result.message || "已关闭"); return loadState();
+    }).catch(function(error){ notify(error.message, true); });
+  }
+
+  function saveWorldbook(){
+    if(!sessionId()){ notify("请先填写目标会话 ID。", true); return; }
+    post("session/worldbook", { session_id: sessionId(), mode: $("worldbookMode").value }).then(function(result){
+      notify(result.message || "世界书模式已保存"); return loadState();
+    }).catch(function(error){ notify(error.message, true); });
+  }
+
+  function removeCard(card){
+    if(!window.confirm("确定删除角色卡「" + (card.name || card.id) + "」？已关联会话的该角色激活也会解除。")) return;
+    post("delete", { id: card.id }).then(function(result){
+      notify(result.message || "已删除"); if(state.selectedId === card.id) closeDetail(); return loadState();
+    }).catch(function(error){ notify(error.message, true); });
+  }
+
+  function openDetail(id){
+    if(state.selectedId !== id){
+      state.expandedIndices.clear();
+      state.wbPage = 1;
+      state.wbSearch = "";
+      state.wbFilter = "all";
+      state.isEditingOverview = false;
+      state.editingGreetingIndex = -1;
+      state.editingWbIndex = -1;
+    }
+    state.selectedId = id;
+    state.tab = "overview";
+    $("detail").classList.add("show");
+    $("detailBody").textContent = "加载中…";
+    get("card", { id: id }).then(function(data){
+      state.detail = data;
+      var item = state.cards.find(function(c){ return c.id === id; });
+      $("detailTitle").textContent = item ? item.name : "角色卡详情";
+      renderDetail();
+      $("detail").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }).catch(function(error){
+      $("detailBody").textContent = "读取详情失败：" + error.message;
+    });
+  }
+
+  function closeDetail(){
+    state.selectedId = "";
+    state.detail = null;
+    state.expandedIndices.clear();
+    state.isEditingOverview = false;
+    state.editingGreetingIndex = -1;
+    state.editingWbIndex = -1;
+    $("detail").classList.remove("show");
+  }
+
+  function renderDetail(){
+    var data = state.detail;
+    if(!data) return;
+    var body = $("detailBody");
+    body.replaceChildren();
+    document.querySelectorAll(".tab").forEach(function(button){
+      button.classList.toggle("on", button.dataset.tab === state.tab);
+    });
+
+    if(state.tab === "overview"){
+      var core = data.overview || data.document || {};
+      if(core.data) core = core.data;
+
+      // 1. 原生 Persona ID 模块
+      var pSection = document.createElement("div"); pSection.className = "entry";
+      var pHead = document.createElement("div"); pHead.className = "entry-title";
+      pHead.style.display = "flex"; pHead.style.justifyContent = "space-between"; pHead.style.alignItems = "center"; pHead.style.flexWrap = "wrap"; pHead.style.gap = "6px";
+      var pTitle = document.createElement("span"); pTitle.textContent = "原生 Persona ID";
+      var pHint = document.createElement("span"); pHint.className = "hint"; pHint.textContent = "可自定义，保存后自动同步至原生 Persona 及关联会话";
+      pHead.append(pTitle, pHint);
+      var pRow = document.createElement("div"); pRow.style.display = "flex"; pRow.style.gap = "8px"; pRow.style.marginTop = "8px"; pRow.style.alignItems = "center"; pRow.style.flexWrap = "wrap";
+      var pInput = document.createElement("input"); pInput.id = "editPersonaId"; pInput.style.flex = "1"; pInput.style.minWidth = "220px"; pInput.value = data.persona_id || ""; pInput.placeholder = "例如 ST/美奈";
+      var saveBtn = document.createElement("button"); saveBtn.id = "savePersonaIdBtn"; saveBtn.className = "btn small primary"; saveBtn.textContent = "保存修改";
+      saveBtn.addEventListener("click", function(){
+        var val = pInput.value.trim();
+        if(!val){ notify("Persona ID 不能为空", true); return; }
+        setBusy(saveBtn, true);
+        post("card/persona_id", { id: data.id, persona_id: val }).then(function(res){
+          notify(res.message || "Persona ID 已更新");
+          data.persona_id = res.data && res.data.persona_id ? res.data.persona_id : val;
+          pInput.value = data.persona_id;
+          return loadState();
+        }).catch(function(err){ notify(err.message, true); }).finally(function(){ setBusy(saveBtn, false); });
+      });
+      var resetBtn = document.createElement("button"); resetBtn.id = "resetPersonaIdBtn"; resetBtn.className = "btn small"; resetBtn.textContent = "恢复默认"; resetBtn.title = "恢复为默认格式 ST/{名称} [{卡片ID}]";
+      resetBtn.addEventListener("click", function(){
+        if(!window.confirm("确定将 Persona ID 恢复为默认格式？")) return;
+        setBusy(resetBtn, true);
+        post("card/persona_id", { id: data.id, reset: true }).then(function(res){
+          notify(res.message || "已恢复为默认 Persona ID");
+          if(res.data && res.data.persona_id){ data.persona_id = res.data.persona_id; pInput.value = data.persona_id; }
+          return loadState();
+        }).catch(function(err){ notify(err.message, true); }).finally(function(){ setBusy(resetBtn, false); });
+      });
+      pRow.append(pInput, saveBtn, resetBtn); pSection.append(pHead, pRow); body.appendChild(pSection);
+
+      // 2. 概览字段模块：支持只读浏览与编辑表单切换（参考 astrbot_plugin_st_prompt）
+      var ovSection = document.createElement("div"); ovSection.className = "edit-box";
+      var ovHead = document.createElement("div"); ovHead.className = "edit-head";
+      var ovTitle = document.createElement("span"); ovTitle.className = "edit-title"; ovTitle.textContent = state.isEditingOverview ? "✏️ 编辑角色核心设定" : "📋 角色核心设定";
+      ovHead.appendChild(ovTitle);
+
+      if(!state.isEditingOverview){
+        var editOvBtn = createButton("✏️ 编辑概览字段", "small", function(){
+          state.isEditingOverview = true;
+          renderDetail();
+        });
+        ovHead.appendChild(editOvBtn);
+        ovSection.appendChild(ovHead);
+
+        var pairs = [["名称", core.name], ["作者", core.creator], ["描述", core.description], ["性格", core.personality], ["场景", core.scenario], ["创作者备注", core.creator_notes]];
+        var hasField = false;
+        pairs.forEach(function(pair){
+          if(pair[1]){
+            hasField = true;
+            var sec = document.createElement("div"); sec.className = "entry"; sec.style.marginBottom = "8px";
+            var t = document.createElement("div"); t.className = "entry-title"; t.textContent = pair[0];
+            var v = document.createElement("div"); v.className = "entry-content"; v.textContent = text(pair[1]);
+            sec.append(t, v); ovSection.appendChild(sec);
+          }
+        });
+        if(!hasField){
+          var emptyNote = document.createElement("div"); emptyNote.className = "hint"; emptyNote.textContent = "此卡片尚未设置核心字段，点击右上角【编辑概览字段】添加。";
+          ovSection.appendChild(emptyNote);
+        }
+      } else {
+        ovSection.appendChild(ovHead);
+        var formGrid = document.createElement("div"); formGrid.className = "form-grid";
+
+        function makeField(label, val, isTextarea, isFull, placeholder){
+          var wrap = document.createElement("div"); wrap.className = "form-field" + (isFull ? " full" : "");
+          var lbl = document.createElement("label"); lbl.textContent = label;
+          var input = document.createElement(isTextarea ? "textarea" : "input");
+          input.value = text(val);
+          if(placeholder) input.placeholder = placeholder;
+          wrap.append(lbl, input);
+          return { wrap: wrap, input: input };
+        }
+
+        var fName = makeField("角色名称", core.name, false, false, "例如：芙莉莲");
+        var fCreator = makeField("卡片作者", core.creator, false, false, "创作者名字");
+        var fDesc = makeField("角色描述（设定/外观/背景）", core.description, true, true, "角色的外貌、背景故事与基础设定…");
+        var fPersonality = makeField("角色性格", core.personality, true, false, "性格特点、说话口癖与行为模式…");
+        var fScenario = makeField("剧情背景 / 场景", core.scenario, true, false, "故事展开的场景设定与当前处境…");
+        var fNotes = makeField("创作者备注", core.creator_notes, true, true, "提供给使用者或大模型的附加说明…");
+
+        formGrid.append(fName.wrap, fCreator.wrap, fDesc.wrap, fPersonality.wrap, fScenario.wrap, fNotes.wrap);
+        ovSection.appendChild(formGrid);
+
+        var ovBar = document.createElement("div"); ovBar.className = "edit-bar";
+        var ovSaveBtn = document.createElement("button"); ovSaveBtn.className = "btn small primary"; ovSaveBtn.textContent = "💾 保存概览";
+        var ovCancelBtn = document.createElement("button"); ovCancelBtn.className = "btn small"; ovCancelBtn.textContent = "取消";
+
+        ovSaveBtn.addEventListener("click", function(){
+          var trimmedName = fName.input.value.trim();
+          if(!trimmedName){
+            notify("角色卡名称不能为空", true);
+            fName.input.focus();
+            return;
+          }
+          setBusy(ovSaveBtn, true);
+          var payload = {
+            id: data.id,
+            name: trimmedName,
+            creator: fCreator.input.value.trim(),
+            description: fDesc.input.value,
+            personality: fPersonality.input.value,
+            scenario: fScenario.input.value,
+            creator_notes: fNotes.input.value
+          };
+          post("card/overview/edit", payload).then(function(res){
+            notify("角色卡概览已更新");
+            data.overview = res.data && res.data.overview ? res.data.overview : payload;
+            $("detailTitle").textContent = data.overview.name || "角色卡详情";
+            // 同步更新列表中该卡片的显示名称
+            var cItem = state.cards.find(function(c){ return c.id === data.id; });
+            if(cItem){ cItem.name = data.overview.name; cItem.description = data.overview.description; renderCards(); }
+            state.isEditingOverview = false;
+            renderDetail();
+          }).catch(function(err){
+            notify("保存概览失败：" + err.message, true);
+          }).finally(function(){
+            setBusy(ovSaveBtn, false);
+          });
+        });
+
+        ovCancelBtn.addEventListener("click", function(){
+          state.isEditingOverview = false;
+          renderDetail();
+        });
+
+        ovBar.append(ovSaveBtn, ovCancelBtn);
+        ovSection.appendChild(ovBar);
+      }
+      body.appendChild(ovSection);
+
+      (data.warnings || []).forEach(function(w){
+        var note = document.createElement("div"); note.className = "entry"; note.textContent = "提示：" + w; body.appendChild(note);
+      });
+
+    } else if(state.tab === "greetings"){
+      var greetings = data.greetings || [];
+      var gBox = document.createElement("div"); gBox.className = "edit-box";
+      var gHead = document.createElement("div"); gHead.className = "edit-head";
+      var gTitle = document.createElement("span"); gTitle.className = "edit-title"; gTitle.textContent = "💬 角色开场白（共 " + greetings.length + " 条）";
+      var addGBtn = createButton("+ 添加备选开场白", "small primary", function(){
+        greetings.push({ name: "备用开场白 " + greetings.length, text: "" });
+        state.editingGreetingIndex = greetings.length - 1;
+        renderDetail();
+      });
+      gHead.append(gTitle, addGBtn);
+      gBox.appendChild(gHead);
+
+      if(!greetings.length){
+        var emptyG = document.createElement("div"); emptyG.className = "hint"; emptyG.textContent = "还没有开场白，点击右上角【+ 添加备选开场白】创建。";
+        gBox.appendChild(emptyG);
+      } else {
+        greetings.forEach(function(g, index){
+          var isEditingThis = (state.editingGreetingIndex === index);
+          var entry = document.createElement("div"); entry.className = "entry"; entry.style.marginBottom = "10px";
+
+          var eHead = document.createElement("div"); eHead.className = "entry-title";
+          eHead.style.display = "flex"; eHead.style.justifyContent = "space-between"; eHead.style.alignItems = "center"; eHead.style.flexWrap = "wrap"; eHead.style.gap = "6px";
+          var eTitle = document.createElement("span");
+          eTitle.textContent = (index === 0 ? "1. 默认开场白" : (index + 1) + ". 备用开场白 " + index);
+          eHead.appendChild(eTitle);
+
+          if(!isEditingThis){
+            var btnGroup = document.createElement("div"); btnGroup.style.display = "flex"; btnGroup.style.gap = "6px";
+            var btnEdit = createButton("✏️ 编辑", "small", function(){
+              state.editingGreetingIndex = index;
+              renderDetail();
+            });
+            btnGroup.appendChild(btnEdit);
+            if(index > 0){
+              var btnDel = createButton("🗑️ 删除", "small danger", function(){
+                if(!window.confirm("确定删除备用开场白 #" + (index + 1) + "？")) return;
+                var nextGreetings = greetings.slice(0, index).concat(greetings.slice(index + 1));
+                post("card/greetings/edit", { id: data.id, greetings: nextGreetings.map(function(item){ return item.text; }) }).then(function(res){
+                  notify("已删除备用开场白");
+                  data.greetings = res.data && res.data.greetings ? res.data.greetings : nextGreetings;
+                  if(state.editingGreetingIndex === index) state.editingGreetingIndex = -1;
+                  var cItem = state.cards.find(function(c){ return c.id === data.id; });
+                  if(cItem){ cItem.greeting_count = data.greetings.length; renderCards(); }
+                  renderDetail();
+                }).catch(function(err){ notify("删除失败：" + err.message, true); });
+              });
+              btnGroup.appendChild(btnDel);
+            }
+            eHead.appendChild(btnGroup);
+            entry.appendChild(eHead);
+
+            var value = document.createElement("div"); value.className = "entry-content"; value.textContent = text(g.text || "（空开场白）");
+            entry.appendChild(value);
+          } else {
+            entry.appendChild(eHead);
+            var gTextarea = document.createElement("textarea");
+            gTextarea.style.width = "100%"; gTextarea.style.minHeight = "96px"; gTextarea.style.marginTop = "8px"; gTextarea.style.padding = "8px 10px";
+            gTextarea.style.fontFamily = "ui-monospace,SFMono-Regular,Consolas,monospace"; gTextarea.style.fontSize = "12.5px"; gTextarea.style.lineHeight = "1.6";
+            gTextarea.style.borderRadius = "8px"; gTextarea.style.border = "1px solid var(--line)"; gTextarea.style.background = "var(--surface)"; gTextarea.style.color = "inherit";
+            gTextarea.placeholder = "输入开场白内容，支持 {{user}} 和 {{char}} 等宏占位符…";
+            gTextarea.value = text(g.text);
+            entry.appendChild(gTextarea);
+
+            var gBar = document.createElement("div"); gBar.className = "edit-bar";
+            var gSaveBtn = document.createElement("button"); gSaveBtn.className = "btn small primary"; gSaveBtn.textContent = "💾 保存开场白";
+            var gCancelBtn = document.createElement("button"); gCancelBtn.className = "btn small"; gCancelBtn.textContent = "取消";
+
+            gSaveBtn.addEventListener("click", function(){
+              var val = gTextarea.value.trim();
+              setBusy(gSaveBtn, true);
+              var cloneList = greetings.map(function(item, idx){ return idx === index ? val : item.text; });
+              post("card/greetings/edit", { id: data.id, greetings: cloneList }).then(function(res){
+                notify("开场白已更新");
+                data.greetings = res.data && res.data.greetings ? res.data.greetings : greetings;
+                g.text = val;
+                state.editingGreetingIndex = -1;
+                var cItem = state.cards.find(function(c){ return c.id === data.id; });
+                if(cItem){ cItem.greeting_count = data.greetings.length; renderCards(); }
+                renderDetail();
+              }).catch(function(err){
+                notify("保存开场白失败：" + err.message, true);
+              }).finally(function(){
+                setBusy(gSaveBtn, false);
+              });
+            });
+
+            gCancelBtn.addEventListener("click", function(){
+              // 如果是新建的空开场白点击取消，直接移除
+              if(!g.text && index === greetings.length - 1){
+                greetings.pop();
+              }
+              state.editingGreetingIndex = -1;
+              renderDetail();
+            });
+
+            gBar.append(gSaveBtn, gCancelBtn);
+            entry.appendChild(gBar);
+          }
+
+          gBox.appendChild(entry);
+        });
+      }
+      body.appendChild(gBox);} else if(state.tab === "worldbook"){
+      renderWorldbookTab(data, body);
+
+    } else {
+      body.textContent = "读取脚本与正则配置…";
+      get("scripts", { id: state.selectedId }).then(function(result){
+        if(state.tab !== "scripts" || state.selectedId !== result.id) return;
+        body.replaceChildren();
+        var regexes = result.regex_scripts || [];
+        var otherScripts = result.scripts || [];
+        
+        var regBox = document.createElement("div");
+        var regTitle = document.createElement("div");
+        regTitle.className = "entry-title"; regTitle.style.marginBottom = "8px";
+        regTitle.textContent = "⚡ 内置 Regex Scripts（" + (regexes.length ? regexes.length + " 组，插件默认信任执行" : "未配置") + "）";
+        regBox.appendChild(regTitle);
+
+        if(regexes.length){
+          regexes.forEach(function(r, index){
+            r = r && typeof r === "object" ? r : {};
+            var entry = document.createElement("div"); entry.className = "entry";
+            var header = document.createElement("div"); header.className = "entry-title";
+            var status = r.disabled ? " [已禁用]" : " [已启用]";
+            var placements = r.placement == null ? [2] : (Array.isArray(r.placement) ? r.placement : (Number.isInteger(r.placement) ? [r.placement] : []));
+            var hasInput = placements.includes(1), hasOutput = placements.includes(2);
+            var placementDesc = hasInput && hasOutput ? "用户输入 + AI输出" : (hasInput ? "用户输入 (Request)" : (hasOutput ? "AI输出 (Response)" : "无有效 placement"));
+            var promptNote = r.promptOnly ? " · 仅提示词生效" : "";
+            header.textContent = (index + 1) + ". " + (r.scriptName || "未命名规则") + status + " · " + placementDesc + promptNote;
+            var details = document.createElement("div"); details.className = "hint"; details.style.marginTop = "4px";
+            details.textContent = "模式: " + (r.findRegex || "") + " ➔ 替换为: " + (r.replaceString != null ? r.replaceString : "");
+            entry.append(header, details); regBox.appendChild(entry);
+          });
+        } else {
+          var emptyNote = document.createElement("div"); emptyNote.className = "hint"; emptyNote.style.marginBottom = "12px";
+          emptyNote.textContent = "此卡片未检测到内置 regex_scripts 规则。";
+          regBox.appendChild(emptyNote);
+        }
+        body.appendChild(regBox);
+
+        if(otherScripts.length){
+          var otherBox = document.createElement("div"); otherBox.style.marginTop = "18px";
+          var otherTitle = document.createElement("div"); otherTitle.className = "entry-title"; otherTitle.style.marginBottom = "8px";
+          otherTitle.textContent = "🛡️ 其他脚本 / 正则数据（保留数据，不执行）";
+          otherBox.appendChild(otherTitle);
+          otherScripts.forEach(function(item, index){
+            var entry = document.createElement("div"); entry.className = "entry";
+            var title = document.createElement("div"); title.className = "entry-title";
+            title.textContent = (index + 1) + ". " + (item.key || item.name || "扩展数据");
+            var pre = document.createElement("pre");
+            pre.textContent = JSON.stringify(item.items || item, null, 2);
+            entry.append(title, pre); otherBox.appendChild(entry);
+          });
+          body.appendChild(otherBox);
+        }
+      }).catch(function(error){ body.textContent = "读取脚本审阅数据失败：" + error.message; });
+    }
+  }
+
+  function renderWorldbookTab(data, host){
+    var entries = data.worldbook || [];
+    if(!entries.length){
+      host.textContent = "卡片没有世界书条目。";
+      return;
+    }
+
+    // 1. 构建常驻工具栏（只在初次进入或整 tab 渲染时构建一次，保证搜索输入框焦点不丢失）
+    var toolbar = document.createElement("div"); toolbar.className = "wb-toolbar";
+
+    // 搜索输入
+    var searchWrap = document.createElement("div"); searchWrap.className = "wb-search-wrap";
+    var searchInput = document.createElement("input");
+    searchInput.type = "search"; searchInput.placeholder = "搜索条目名称、触发词或内容…";
+    searchInput.value = state.wbSearch;
+    searchInput.setAttribute("aria-label", "搜索世界书条目");
+    searchWrap.appendChild(searchInput);
+    toolbar.appendChild(searchWrap);
+
+    // 状态筛选下拉
+    var filterWrap = document.createElement("div"); filterWrap.className = "wb-filter-wrap";
+    var filterSelect = document.createElement("select");
+    filterSelect.setAttribute("aria-label", "按启用状态筛选世界书条目");
+    [
+      ["all", "全部状态"],
+      ["enabled", "仅已启用"],
+      ["disabled", "仅已禁用"]
+    ].forEach(function(opt){
+      var o = document.createElement("option"); o.value = opt[0]; o.textContent = opt[1];
+      if(state.wbFilter === opt[0]) o.selected = true;
+      filterSelect.appendChild(o);
+    });
+    filterWrap.appendChild(filterSelect);
+    toolbar.appendChild(filterWrap);
+
+    // 跨页批量操作按钮组
+    var batchGroup = document.createElement("div"); batchGroup.className = "wb-batch-group";
+    var batchEnableBtn = document.createElement("button");
+    batchEnableBtn.className = "btn small primary";
+    var batchDisableBtn = document.createElement("button");
+    batchDisableBtn.className = "btn small";
+    batchGroup.append(batchEnableBtn, batchDisableBtn);
+    toolbar.appendChild(batchGroup);
+    host.appendChild(toolbar);
+
+    // 2. 动态内容区（包含状态条/分页器 + 条目列表），搜索或操作时只更新此区域
+    var dynamicArea = document.createElement("div");
+    dynamicArea.className = "wb-dynamic-area";
+    host.appendChild(dynamicArea);
+
+    function updateDynamicView(){
+      dynamicArea.replaceChildren();
+
+      var validEntries = [];
+      for(var i = 0; i < entries.length; i++){
+        // 严格防御非对象条目
+        if(entries[i] && typeof entries[i] === "object" && !Array.isArray(entries[i])){
+          validEntries.push({ rawIndex: i, entry: entries[i] });
+        }
+      }
+
+      var totalCount = validEntries.length;
+      var enabledCount = validEntries.filter(function(item){ return item.entry.enabled !== false; }).length;
+
+      // 过滤逻辑：全局条目范围
+      var keyword = state.wbSearch.trim().toLowerCase();
+      var filter = state.wbFilter;
+      var matchedList = [];
+      for(var m = 0; m < validEntries.length; m++){
+        var itemObj = validEntries[m];
+        var item = itemObj.entry;
+        var isEn = item.enabled !== false;
+        if(filter === "enabled" && !isEn) continue;
+        if(filter === "disabled" && isEn) continue;
+        if(keyword){
+          var comment = String(item.comment || "").toLowerCase();
+          var idStr = String(item.id || "").toLowerCase();
+          var content = String(item.content || "").toLowerCase();
+          var keys = extractKeys(item, false);
+          var secKeys = extractKeys(item, true);
+          var keysStr = keys.concat(secKeys).join(" ").toLowerCase();
+          if(comment.indexOf(keyword) === -1 && idStr.indexOf(keyword) === -1 && content.indexOf(keyword) === -1 && keysStr.indexOf(keyword) === -1){
+            continue;
+          }
+        }
+        matchedList.push(itemObj);
+      }
+
+      // 统计筛选结果中待启用/待禁用数，并同步工具栏批量按钮
+      var filterToEnableIndices = [];
+      var filterToDisableIndices = [];
+      matchedList.forEach(function(m){
+        if(m.entry.enabled === false) filterToEnableIndices.push(m.rawIndex);
+        else filterToDisableIndices.push(m.rawIndex);
+      });
+
+      batchEnableBtn.textContent = "批量启用筛选 (" + filterToEnableIndices.length + ")";
+      batchEnableBtn.title = "将当前筛选出的 " + matchedList.length + " 个条目全部启用（跨页生效）";
+      batchEnableBtn.disabled = filterToEnableIndices.length === 0;
+
+      batchDisableBtn.textContent = "批量禁用筛选 (" + filterToDisableIndices.length + ")";
+      batchDisableBtn.title = "将当前筛选出的 " + matchedList.length + " 个条目全部禁用（跨页生效）";
+      batchDisableBtn.disabled = filterToDisableIndices.length === 0;
+
+      // 分页计算
+      var pageSize = state.wbPageSize;
+      var totalPages = Math.max(1, Math.ceil(matchedList.length / pageSize));
+      if(state.wbPage > totalPages) state.wbPage = totalPages;
+      if(state.wbPage < 1) state.wbPage = 1;
+      var startIndex = (state.wbPage - 1) * pageSize;
+      var endIndex = Math.min(startIndex + pageSize, matchedList.length);
+      var currentPageItems = matchedList.slice(startIndex, endIndex);
+
+      // 状态条与分页器
+      var statusBar = document.createElement("div"); statusBar.className = "wb-status-bar";
+      var statsInfo = document.createElement("div"); statsInfo.className = "wb-stats";
+      statsInfo.innerHTML = "总数: <strong>" + totalCount + "</strong> · 已启用: <strong>" + enabledCount + "</strong> · 匹配: <strong>" + matchedList.length + "</strong>" +
+        (matchedList.length > 0 ? " (显示 " + (startIndex + 1) + " - " + endIndex + " 条)" : "");
+      statusBar.appendChild(statsInfo);
+
+      if(totalPages > 1){
+        var pager = document.createElement("div"); pager.className = "wb-pager";
+        var firstBtn = createButton("«", "", function(){ state.wbPage = 1; updateDynamicView(); });
+        var prevBtn = createButton("‹", "", function(){ if(state.wbPage > 1){ state.wbPage--; updateDynamicView(); } });
+        firstBtn.disabled = prevBtn.disabled = (state.wbPage <= 1);
+        firstBtn.setAttribute("aria-label", "第一页");
+        prevBtn.setAttribute("aria-label", "上一页");
+
+        var pagerText = document.createElement("span"); pagerText.className = "wb-pager-info";
+        pagerText.textContent = state.wbPage + " / " + totalPages;
+
+        var nextBtn = createButton("›", "", function(){ if(state.wbPage < totalPages){ state.wbPage++; updateDynamicView(); } });
+        var lastBtn = createButton("»", "", function(){ state.wbPage = totalPages; updateDynamicView(); });
+        nextBtn.disabled = lastBtn.disabled = (state.wbPage >= totalPages);
+        nextBtn.setAttribute("aria-label", "下一页");
+        lastBtn.setAttribute("aria-label", "最后一页");
+
+        pager.append(firstBtn, prevBtn, pagerText, nextBtn, lastBtn);
+        statusBar.appendChild(pager);
+      }
+      dynamicArea.appendChild(statusBar);
+
+      // 条目列表渲染
+      var listContainer = document.createElement("div"); listContainer.className = "wb-list";
+      if(!matchedList.length){
+        var emptyWb = document.createElement("div"); emptyWb.className = "empty"; emptyWb.textContent = "未找到符合条件的世界书条目。";
+        listContainer.appendChild(emptyWb);
+        dynamicArea.appendChild(listContainer);
+        return;
+      }
+
+      currentPageItems.forEach(function(itemObj){
+        var rawIdx = itemObj.rawIndex;
+        var entry = itemObj.entry;
+        var isEnabled = entry.enabled !== false;
+        var isExpanded = state.expandedIndices.has(rawIdx);
+
+        var entryBox = document.createElement("div");
+        entryBox.className = "wb-entry" + (isEnabled ? "" : " disabled");
+        entryBox.id = "wb-entry-row-" + rawIdx;
+
+        // 摘要行
+        var summaryRow = document.createElement("div"); summaryRow.className = "wb-summary";
+        var leftPart = document.createElement("div"); leftPart.className = "wb-summary-left";
+
+        var toggleBtn = document.createElement("button");
+        toggleBtn.className = "wb-toggle-btn";
+        toggleBtn.textContent = "▸";
+        toggleBtn.setAttribute("aria-expanded", isExpanded ? "true" : "false");
+        toggleBtn.setAttribute("aria-controls", "wb-content-" + rawIdx);
+        toggleBtn.setAttribute("aria-label", (isExpanded ? "收起" : "展开") + "条目 #" + (rawIdx + 1) + " 内容");
+
+        var indexSpan = document.createElement("span"); indexSpan.className = "wb-index"; indexSpan.textContent = "#" + (rawIdx + 1);
+        var nameSpan = document.createElement("span"); nameSpan.className = "wb-name";
+        var entryName = entry.comment || entry.id || ("条目 " + (rawIdx + 1));
+        nameSpan.textContent = entryName; nameSpan.title = entryName;
+
+        var badges = document.createElement("div"); badges.className = "wb-badges";
+        if(entry.constant){
+          var constChip = document.createElement("span"); constChip.className = "wb-chip constant"; constChip.textContent = "常驻";
+          badges.appendChild(constChip);
+        }
+        var keyList = extractKeys(entry, false);
+        if(keyList.length > 0){
+          var showKeys = keyList.slice(0, 3);
+          showKeys.forEach(function(k){
+            var chip = document.createElement("span"); chip.className = "wb-chip"; chip.textContent = text(k); chip.title = text(k);
+            badges.appendChild(chip);
+          });
+          if(keyList.length > 3){
+            var moreChip = document.createElement("span"); moreChip.className = "wb-chip more"; moreChip.textContent = "还有 " + (keyList.length - 3) + " 个";
+            moreChip.title = keyList.slice(3).map(text).join("、");
+            badges.appendChild(moreChip);
+          }
+        } else if(!entry.constant){
+          var noKeyChip = document.createElement("span"); noKeyChip.className = "wb-chip more"; noKeyChip.textContent = "无触发词";
+          badges.appendChild(noKeyChip);
+        }
+        if(!isEnabled){
+          var disChip = document.createElement("span"); disChip.className = "wb-chip disabled-tag"; disChip.textContent = "已禁用";
+          badges.appendChild(disChip);
+        }
+
+        leftPart.append(toggleBtn, indexSpan, nameSpan, badges);
+
+        // Switch 开关
+        var switchWrap = document.createElement("div"); switchWrap.className = "wb-switch-wrap";
+        var switchLabel = document.createElement("label"); switchLabel.className = "wb-switch";
+        var switchInput = document.createElement("input");
+        switchInput.type = "checkbox";
+        switchInput.checked = isEnabled;
+        switchInput.setAttribute("aria-label", entryName + " 启用开关");
+        var slider = document.createElement("span"); slider.className = "wb-slider";
+        switchLabel.append(switchInput, slider);
+
+        var switchText = document.createElement("span"); switchText.className = "wb-switch-text";
+        switchText.textContent = isEnabled ? "已启用" : "已禁用";
+
+        switchWrap.append(switchText, switchLabel);
+        summaryRow.append(leftPart, switchWrap);
+        entryBox.appendChild(summaryRow);
+
+        // 单条开关事件
+        switchInput.addEventListener("change", function(){
+          var targetEnabled = switchInput.checked;
+          switchInput.disabled = true;
+          switchText.textContent = "保存中…";
+          post("card/worldbook/enabled", {
+            id: data.id,
+            indices: [rawIdx],
+            enabled: targetEnabled
+          }).then(function(res){
+            entry.enabled = targetEnabled;
+            notify("条目 #" + (rawIdx + 1) + " 已" + (targetEnabled ? "启用" : "禁用"));
+            // 切换后直接重新刷新动态视图，保持筛选与批量操作按钮计数严格一致
+            updateDynamicView();
+          }).catch(function(err){
+            switchInput.checked = !targetEnabled;
+            switchText.textContent = !targetEnabled ? "已启用" : "已禁用";
+            notify("保存条目状态失败：" + err.message, true);
+          }).finally(function(){
+            switchInput.disabled = false;
+          });
+        });
+
+        // 展开折叠
+        function toggleExpand(){
+          var currentlyExpanded = state.expandedIndices.has(rawIdx);
+          if(currentlyExpanded){
+            state.expandedIndices.delete(rawIdx);
+            toggleBtn.setAttribute("aria-expanded", "false");
+            toggleBtn.setAttribute("aria-label", "展开条目 #" + (rawIdx + 1) + " 内容");
+            var existingDetail = entryBox.querySelector(".wb-content");
+            if(existingDetail) existingDetail.remove();
+          } else {
+            state.expandedIndices.add(rawIdx);
+            toggleBtn.setAttribute("aria-expanded", "true");
+            toggleBtn.setAttribute("aria-label", "收起条目 #" + (rawIdx + 1) + " 内容");
+            var contentArea = createEntryDetailArea(entry, rawIdx, data);
+            entryBox.appendChild(contentArea);
+          }
+        }
+
+        toggleBtn.addEventListener("click", function(e){ e.stopPropagation(); toggleExpand(); });
+        nameSpan.addEventListener("click", toggleExpand);
+
+        if(isExpanded){
+          entryBox.appendChild(createEntryDetailArea(entry, rawIdx, data));
+        }
+
+        listContainer.appendChild(entryBox);
+      });
+
+      dynamicArea.appendChild(listContainer);
+    }
+
+    // 事件绑定：搜索输入与筛选改变仅更新 dynamicView，绝不销毁 searchInput，杜绝失焦
+    searchInput.addEventListener("input", function(e){
+      state.wbSearch = e.target.value;
+      state.wbPage = 1;
+      updateDynamicView();
+    });
+
+    filterSelect.addEventListener("change", function(e){
+      state.wbFilter = e.target.value;
+      state.wbPage = 1;
+      updateDynamicView();
+    });
+
+    batchEnableBtn.addEventListener("click", function(){
+      var matchedToEnable = [];
+      for(var i = 0; i < entries.length; i++){
+        var it = entries[i];
+        if(!it || typeof it !== "object" || Array.isArray(it)) continue;
+        if(it.enabled === false){
+          // 检查是否符合当前搜索关键词
+          if(state.wbSearch.trim()){
+            var kw = state.wbSearch.trim().toLowerCase();
+            var comment = String(it.comment || "").toLowerCase();
+            var idStr = String(it.id || "").toLowerCase();
+            var content = String(it.content || "").toLowerCase();
+            var keys = extractKeys(it, false).concat(extractKeys(it, true));
+            var keysStr = keys.join(" ").toLowerCase();
+            if(comment.indexOf(kw) === -1 && idStr.indexOf(kw) === -1 && content.indexOf(kw) === -1 && keysStr.indexOf(kw) === -1){
+              continue;
+            }
+          }
+          matchedToEnable.push(i);
+        }
+      }
+      if(!matchedToEnable.length) return;
+      if(!window.confirm("确定将当前筛选匹配的 " + matchedToEnable.length + " 个已禁用条目全部启用？（此操作跨页生效）")) return;
+      setBusy(batchEnableBtn, true); setBusy(batchDisableBtn, true);
+      post("card/worldbook/enabled", { id: data.id, indices: matchedToEnable, enabled: true }).then(function(res){
+        notify(res.message || "已批量启用 " + matchedToEnable.length + " 个条目");
+        matchedToEnable.forEach(function(idx){
+          if(entries[idx]) entries[idx].enabled = true;
+        });
+        updateDynamicView();
+      }).catch(function(err){ notify("批量保存失败：" + err.message, true); })
+        .finally(function(){ setBusy(batchEnableBtn, false); setBusy(batchDisableBtn, false); });
+    });
+
+    batchDisableBtn.addEventListener("click", function(){
+      var matchedToDisable = [];
+      for(var i = 0; i < entries.length; i++){
+        var it = entries[i];
+        if(!it || typeof it !== "object" || Array.isArray(it)) continue;
+        if(it.enabled !== false){
+          if(state.wbSearch.trim()){
+            var kw = state.wbSearch.trim().toLowerCase();
+            var comment = String(it.comment || "").toLowerCase();
+            var idStr = String(it.id || "").toLowerCase();
+            var content = String(it.content || "").toLowerCase();
+            var keys = extractKeys(it, false).concat(extractKeys(it, true));
+            var keysStr = keys.join(" ").toLowerCase();
+            if(comment.indexOf(kw) === -1 && idStr.indexOf(kw) === -1 && content.indexOf(kw) === -1 && keysStr.indexOf(kw) === -1){
+              continue;
+            }
+          }
+          matchedToDisable.push(i);
+        }
+      }
+      if(!matchedToDisable.length) return;
+      if(!window.confirm("确定将当前筛选匹配的 " + matchedToDisable.length + " 个已启用条目全部禁用？（此操作跨页生效）")) return;
+      setBusy(batchEnableBtn, true); setBusy(batchDisableBtn, true);
+      post("card/worldbook/enabled", { id: data.id, indices: matchedToDisable, enabled: false }).then(function(res){
+        notify(res.message || "已批量禁用 " + matchedToDisable.length + " 个条目");
+        matchedToDisable.forEach(function(idx){
+          if(entries[idx]) entries[idx].enabled = false;
+        });
+        updateDynamicView();
+      }).catch(function(err){ notify("批量保存失败：" + err.message, true); })
+        .finally(function(){ setBusy(batchEnableBtn, false); setBusy(batchDisableBtn, false); });
+    });
+
+    // 初始执行一次动态渲染
+    updateDynamicView();
+  }
+
+  // 展开时按需动态创建完整内容区域（严格使用 textContent 与 DOM 节点展示，绝不使用 innerHTML 拼接，杜绝 XSS）
+  function createEntryDetailArea(entry, rawIdx, data){
+    var contentBox = document.createElement("div");
+    contentBox.className = "wb-content";
+    contentBox.id = "wb-content-" + rawIdx;
+
+    var isEditing = (state.editingWbIndex === rawIdx);
+
+    if(!isEditing){
+      // 1. 只读浏览模式
+      var topBar = document.createElement("div");
+      topBar.style.display = "flex"; topBar.style.justifyContent = "space-between"; topBar.style.alignItems = "flex-start"; topBar.style.gap = "10px"; topBar.style.flexWrap = "wrap"; topBar.style.marginBottom = "8px";
+
+      var metaBox = document.createElement("div");
+      metaBox.className = "wb-content-meta";
+      metaBox.style.marginBottom = "0";
+
+      // 触发词
+      var allKeys = extractKeys(entry, false);
+      var keysItem = document.createElement("div"); keysItem.className = "wb-content-meta-item";
+      var keysStrong = document.createElement("strong"); keysStrong.textContent = "触发词：";
+      keysItem.appendChild(keysStrong);
+      keysItem.appendChild(document.createTextNode(allKeys.length ? allKeys.join("、") : "无 / 常驻"));
+      metaBox.appendChild(keysItem);
+
+      // 次要触发词
+      var secKeys = extractKeys(entry, true);
+      if(secKeys.length){
+        var secItem = document.createElement("div"); secItem.className = "wb-content-meta-item";
+        var secStrong = document.createElement("strong"); secStrong.textContent = "次要触发词：";
+        secItem.appendChild(secStrong);
+        secItem.appendChild(document.createTextNode(secKeys.join("、")));
+        metaBox.appendChild(secItem);
+      }
+
+      // 插入顺序
+      if(entry.insertion_order != null){
+        var orderItem = document.createElement("div"); orderItem.className = "wb-content-meta-item";
+        var orderStrong = document.createElement("strong"); orderStrong.textContent = "插入顺序：";
+        orderItem.appendChild(orderStrong);
+        orderItem.appendChild(document.createTextNode(text(entry.insertion_order)));
+        metaBox.appendChild(orderItem);
+      }
+
+      // 正则触发提示
+      if(entry.use_regex){
+        var regItem = document.createElement("div"); regItem.className = "wb-content-meta-item";
+        var regStrong = document.createElement("strong"); regStrong.textContent = "正则触发：";
+        regItem.appendChild(regStrong);
+        regItem.appendChild(document.createTextNode("已开启（当前插件不执行正则触发条件）"));
+        metaBox.appendChild(regItem);
+      }
+
+      var editBtn = createButton("✏️ 编辑条目", "small", function(){
+        state.editingWbIndex = rawIdx;
+        renderDetail();
+      });
+
+      topBar.append(metaBox, editBtn);
+      contentBox.appendChild(topBar);
+
+      var bodyBox = document.createElement("div");
+      bodyBox.className = "wb-content-body";
+      bodyBox.textContent = text(entry.content || "（无内容）");
+      contentBox.appendChild(bodyBox);
+
+    } else {
+      // 2. 编辑表单模式（参考 astrbot_plugin_st_prompt）
+      var editTitle = document.createElement("div");
+      editTitle.style.fontWeight = "700"; editTitle.style.fontSize = "13.5px"; editTitle.style.marginBottom = "10px";
+      editTitle.textContent = "✏️ 编辑条目 #" + (rawIdx + 1);
+      contentBox.appendChild(editTitle);
+
+      var formGrid = document.createElement("div");
+      formGrid.className = "form-grid";
+
+      function makeWbField(label, val, isTextarea, isFull, placeholder, type){
+        var wrap = document.createElement("div"); wrap.className = "form-field" + (isFull ? " full" : "");
+        var lbl = document.createElement("label"); lbl.textContent = label;
+        var input = document.createElement(isTextarea ? "textarea" : "input");
+        if(type) input.type = type;
+        input.value = text(val);
+        if(placeholder) input.placeholder = placeholder;
+        wrap.append(lbl, input);
+        return { wrap: wrap, input: input };
+      }
+
+      var fName = makeWbField("条目备注 / 名称", entry.comment, false, false, "例如：世界观设定、巨龙传说");
+      var fOrder = makeWbField("插入顺序 (insertion_order)", entry.insertion_order != null ? entry.insertion_order : rawIdx, false, false, "数字，越小插入越靠前", "number");
+      var fKeys = makeWbField("主要触发词（逗号分隔）", extractKeys(entry, false).join(", "), false, true, "多个词用逗号分隔，如：巨龙, 龙族, 远古种");
+      var fSecKeys = makeWbField("次要触发词（逗号分隔）", extractKeys(entry, true).join(", "), false, true, "多个次要触发词用逗号分隔，如：烈焰, 龙鳞");
+
+      // 常驻勾选框
+      var constWrap = document.createElement("div"); constWrap.className = "form-field full";
+      var constLabel = document.createElement("label"); constLabel.className = "form-check";
+      var constInput = document.createElement("input"); constInput.type = "checkbox"; constInput.checked = !!entry.constant;
+      var constSpan = document.createElement("span"); constSpan.textContent = "常驻条目（无需关键词，每轮对话始终尝试匹配注入）";
+      constLabel.append(constInput, constSpan);
+      constWrap.appendChild(constLabel);
+
+      var fContent = makeWbField("条目正文内容", entry.content, true, true, "填写该条目需要向大模型注入的世界观背景或知识设定…");
+      fContent.input.style.minHeight = "120px";
+
+      formGrid.append(fName.wrap, fOrder.wrap, fKeys.wrap, fSecKeys.wrap, constWrap, fContent.wrap);
+      contentBox.appendChild(formGrid);
+
+      var wbBar = document.createElement("div"); wbBar.className = "edit-bar";
+      var wbSaveBtn = document.createElement("button"); wbSaveBtn.className = "btn small primary"; wbSaveBtn.textContent = "💾 保存条目";
+      var wbCancelBtn = document.createElement("button"); wbCancelBtn.className = "btn small"; wbCancelBtn.textContent = "取消";
+
+      wbSaveBtn.addEventListener("click", function(){
+        setBusy(wbSaveBtn, true);
+        var orderParsed = fOrder.input.value.trim() !== "" ? parseInt(fOrder.input.value.trim(), 10) : rawIdx;
+        var updatedEntry = {
+          comment: fName.input.value.trim(),
+          content: fContent.input.value,
+          keys: fKeys.input.value.split(",").map(function(s){ return s.trim(); }).filter(Boolean),
+          secondary_keys: fSecKeys.input.value.split(",").map(function(s){ return s.trim(); }).filter(Boolean),
+          constant: constInput.checked,
+          insertion_order: isNaN(orderParsed) ? rawIdx : orderParsed
+        };
+
+        post("card/worldbook/edit", { id: data.id, index: rawIdx, entry: updatedEntry }).then(function(res){
+          notify("世界书条目 #" + (rawIdx + 1) + " 已更新保存");
+          if(res.data && res.data.entry){
+            Object.assign(entry, res.data.entry);
+          } else {
+            Object.assign(entry, updatedEntry);
+          }
+          state.editingWbIndex = -1;
+          renderDetail();
+        }).catch(function(err){
+          notify("保存条目失败：" + err.message, true);
+        }).finally(function(){
+          setBusy(wbSaveBtn, false);
+        });
+      });
+
+      wbCancelBtn.addEventListener("click", function(){
+        state.editingWbIndex = -1;
+        renderDetail();
+      });
+
+      wbBar.append(wbSaveBtn, wbCancelBtn);
+      contentBox.appendChild(wbBar);
+    }
+
+    return contentBox;
+  }
+  function bytesToBase64(bytes){
+    var binary = "";
+    for(var index = 0; index < bytes.length; index += 32768){
+      binary += String.fromCharCode.apply(null, bytes.subarray(index, Math.min(index + 32768, bytes.length)));
+    }
+    return window.btoa(binary);
+  }
+
+  async function retryPendingUploadCleanup(){
+    var pending = pendingUploadCleanup.splice(0);
+    for(var index = 0; index < pending.length; index++){
+      try{ await post("import/abort", { upload_id: pending[index] }); }
+      catch(error){ pendingUploadCleanup.push(pending[index]); }
+    }
+  }
+
+  async function importFile(file){
+    if(!file) return;
+    if(file.size <= 0 || file.size > 128 * 1024 * 1024){ notify("请选择非空且不超过 128 MB 的文件。", true); return; }
+    if(!/\.(png|json)$/i.test(file.name)){ notify("只支持 .png 或 .json 文件。", true); return; }
+    var uploadId = "", chunkSize = 192 * 1024;
+    await retryPendingUploadCleanup();
+    $("uploadStatus").textContent = "准备分块上传 " + file.name + "…";
+    try{
+      var started = await post("import", { name: file.name, size: file.size });
+      uploadId = started.upload_id;
+      chunkSize = started.chunk_size || chunkSize;
+      for(var offset = 0; offset < file.size; offset += chunkSize){
+        var bytes = new Uint8Array(await file.slice(offset, Math.min(offset + chunkSize, file.size)).arrayBuffer());
+        var result = await post("import/chunk", { upload_id: uploadId, offset: offset, data: bytesToBase64(bytes) });
+        $("uploadStatus").textContent = "正在上传 " + file.name + "：" + Math.floor(result.received * 100 / file.size) + "%";
+      }
+      var finished = await post("import/finish", { upload_id: uploadId });
+      if(finished.cleanup_warning){
+        var completedId = uploadId, cleanupPending = false; uploadId = "";
+        try{ await post("import/abort", { upload_id: completedId }); }
+        catch(cleanupError){ pendingUploadCleanup.push(completedId); cleanupPending = true; }
+        if(cleanupPending){
+          $("uploadStatus").textContent = "已导入：" + (finished.name || file.name) + "；临时文件待清理";
+          notify("角色卡已导入，但临时文件尚未清理；后续上传请求会重试清理", true);
+        } else {
+          $("uploadStatus").textContent = "已导入：" + (finished.name || file.name) + "；临时文件已清理";
+          notify("角色卡已导入，临时文件已清理");
+        }
+      } else {
+        uploadId = "";
+        $("uploadStatus").textContent = "已导入：" + (finished.name || file.name); notify("角色卡导入成功");
+      }
+      await loadState();
+    }catch(error){
+      if(uploadId){ try{ await post("import/abort", { upload_id: uploadId }); } catch(ignore){ pendingUploadCleanup.push(uploadId); } }
+      $("uploadStatus").textContent = "导入失败"; notify(error.message, true);
+    }
+  }
+
+  var uploadQueue = Promise.resolve();
+  function queueImport(file){
+    uploadQueue = uploadQueue.then(function(){ return importFile(file); }).catch(function(error){ notify(error.message, true); });
+  }
+
+  $("refreshBtn").addEventListener("click", loadState);
+  $("sessionId").addEventListener("change", loadState);
+  $("saveModeBtn").addEventListener("click", saveWorldbook);
+  $("turnOffBtn").addEventListener("click", turnOff);
+  $("closeDetail").addEventListener("click", closeDetail);
+
+  document.querySelectorAll(".tab").forEach(function(button){
+    button.addEventListener("click", function(){
+      state.tab = button.dataset.tab;
+      renderDetail();
+    });
+  });
+
+  var zone = $("dropZone"), input = $("fileInput");
+  zone.addEventListener("click", function(){ input.click(); });
+  zone.addEventListener("keydown", function(event){
+    if(event.key === "Enter" || event.key === " "){ event.preventDefault(); input.click(); }
+  });
+  input.addEventListener("change", function(){
+    Array.from(input.files || []).forEach(queueImport);
+    input.value = "";
+  });
+  ["dragenter", "dragover"].forEach(function(name){
+    zone.addEventListener(name, function(event){ event.preventDefault(); zone.classList.add("drag"); });
+  });
+  ["dragleave", "drop"].forEach(function(name){
+    zone.addEventListener(name, function(event){ event.preventDefault(); zone.classList.remove("drag"); });
+  });
+  zone.addEventListener("drop", function(event){
+    Array.from((event.dataTransfer && event.dataTransfer.files) || []).forEach(queueImport);
+  });
+
+  $("themeBtn").addEventListener("click", function(){
+    var root = document.documentElement;
+    root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+    try{ window.localStorage.setItem("stcard-console-theme", root.dataset.theme); } catch(e){}
+  });
+  try{
+    if(window.localStorage.getItem("stcard-console-theme") === "dark"){
+      document.documentElement.dataset.theme = "dark";
+    }
+  } catch(e){}
+
+  loadState();
+})();
+</script>
+</body>
+</html>
